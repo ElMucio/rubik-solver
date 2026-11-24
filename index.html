@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rubik Solver — Risolutore Ottimale 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-ambient" aria-hidden="true"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="9.5" height="9.5" rx="2.2" fill="#EF3340" />
+            <rect x="13.25" y="2" width="9.5" height="9.5" rx="2.2" fill="#FACC15" />
+            <rect x="24.5" y="2" width="9.5" height="9.5" rx="2.2" fill="#2563EB" />
+            <rect x="2" y="13.25" width="9.5" height="9.5" rx="2.2" fill="#F7F9FC" />
+            <rect x="13.25" y="13.25" width="9.5" height="9.5" rx="2.2" fill="#16B364" />
+            <rect x="24.5" y="13.25" width="9.5" height="9.5" rx="2.2" fill="#F97316" />
+            <rect x="2" y="24.5" width="9.5" height="9.5" rx="2.2" fill="#2563EB" />
+            <rect x="13.25" y="24.5" width="9.5" height="9.5" rx="2.2" fill="#EF3340" />
+            <rect x="24.5" y="24.5" width="9.5" height="9.5" rx="2.2" fill="#F7F9FC" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Rubik Solver <span class="badge-algo">Kociemba 2-Phase</span></h1>
+          <p class="brand-sub">Imposta le 6 facce e scopri le mosse più veloci per risolverlo</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btnScramble" class="btn btn-secondary" title="Applica 20 mosse casuali">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+          <span>Mischia</span>
+        </button>
+
+        <div class="dropdown-wrap">
+          <button id="btnPatterns" class="btn btn-secondary" aria-haspopup="true" aria-expanded="false">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+            <span>Pattern</span>
+            <svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="patternsMenu" class="dropdown-menu" hidden>
+            <button class="dropdown-item" data-pattern="checkerboard">
+              <strong>Scacchiera</strong>
+              <span>6 mosse ottimali</span>
+            </button>
+            <button class="dropdown-item" data-pattern="cube-in-cube">
+              <strong>Cubo nel Cubo</strong>
+              <span>Pattern geometrico classico</span>
+            </button>
+            <button class="dropdown-item" data-pattern="superflip">
+              <strong>Superflip</strong>
+              <span>Tutti i 12 spigoli capovolti</span>
+            </button>
+            <button class="dropdown-item" data-pattern="cross">
+              <strong>Croce su 6 Facce</strong>
+              <span>Motivo a croce simmetrica</span>
+            </button>
+          </div>
+        </div>
+
+        <button id="btnResetSolved" class="btn btn-ghost" title="Ripristina il cubo risolto">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Risolto</span>
+        </button>
+
+        <button id="btnClear" class="btn btn-ghost" title="Svuota tutti gli adesivi tranne i centri">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+          <span>Svuota</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="workspace">
+    <!-- LEFT COLUMN: 3D Interactive Cube + Solution Player -->
+    <section class="col-stage">
+      <!-- 3D Cube Viewport Card -->
+      <div class="card stage-card">
+        <div class="stage-header">
+          <div class="stage-hint">
+            <span class="pulse-dot"></span>
+            <span id="stageStatusText">Trascina per ruotare il cubo 3D • Clicca un adesivo per colorarlo</span>
+          </div>
+          <label class="mini-toggle" title="Mostra lettere U R F D L B sui centri">
+            <input type="checkbox" id="toggleFaceLabels" checked />
+            <span>Lettere facce</span>
+          </label>
+        </div>
+
+        <div class="cube3d-viewport">
+          <div id="cube3dStage" class="cube3d-stage" aria-label="Cubo di Rubik 3D interattivo"></div>
+          <div class="cube3d-shadow" aria-hidden="true"></div>
+        </div>
+
+        <!-- Camera Presets Bar -->
+        <div class="camera-bar">
+          <span class="camera-label">Vista:</span>
+          <div class="camera-pills">
+            <button class="pill-btn is-active" data-view="-26,-36">Fronte / Alto</button>
+            <button class="pill-btn" data-view="-26,36">Sinistra / Alto</button>
+            <button class="pill-btn" data-view="26,144">Retro / Basso</button>
+            <button class="pill-btn" data-view="26,-144">Destra / Basso</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Solver Action & Playback Card -->
+      <div class="card solver-card">
+        <!-- Validation / Ready Banner + Start Button -->
+        <div class="solve-cta-row">
+          <div id="validationBox" class="validation-box is-valid">
+            <span class="val-icon" id="validationIcon" aria-hidden="true"></span>
+            <div class="val-copy">
+              <strong id="validationTitle">Cubo valido</strong>
+              <span id="validationDesc">Mischia il cubo o colora le 6 facce, poi premi Start.</span>
+            </div>
+          </div>
+
+          <button id="btnSolve" class="btn btn-primary btn-solve">
+            <svg class="ico" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            <span id="btnSolveText">Start • Risolvi</span>
+          </button>
+        </div>
+
+        <!-- Solution Panel (visible once solved) -->
+        <div id="solutionPanel" class="solution-panel" hidden>
+          <div class="solution-meta-bar">
+            <div class="solution-stats">
+              <span class="stat-pill stat-moves" id="statMoves">0 mosse</span>
+              <span class="stat-pill stat-time" id="statTime">0 ms</span>
+              <span class="stat-pill stat-optimal" id="statOptimal" hidden>Ottimale</span>
+            </div>
+            <div class="solution-meta-actions">
+              <button id="btnCopyMoves" class="btn-link" title="Copia la sequenza di mosse">
+                <svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span id="copyMovesLabel">Copia sequenza</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Move Instruction Hero -->
+          <div id="activeMoveCard" class="active-move-card">
+            <div class="move-badge-wrap">
+              <div id="activeMoveBadge" class="move-badge">—</div>
+              <div id="activeMoveArrow" class="move-arrow-ico" aria-hidden="true"></div>
+            </div>
+            <div class="active-move-info">
+              <div class="active-move-step" id="activeMoveStep">Stato iniziale</div>
+              <div class="active-move-title" id="activeMoveTitle">Premi Play o Avanti per eseguire le mosse</div>
+              <div class="active-move-detail" id="activeMoveDetail">Ogni passo verrà animato automaticamente sul cubo 3D.</div>
+            </div>
+          </div>
+
+          <!-- Playback Controls -->
+          <div class="playback-bar">
+            <div class="playback-buttons">
+              <button id="btnFirst" class="icon-btn" title="Torna all'inizio">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+              </button>
+              <button id="btnPrev" class="icon-btn" title="Mossa precedente (Freccia Sinistra)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button id="btnPlayPause" class="icon-btn icon-btn-play" title="Avvia / Pausa (Spazio)">
+                <svg id="iconPlay" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                <svg id="iconPause" viewBox="0 0 24 24" fill="currentColor" hidden><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              </button>
+              <button id="btnNext" class="icon-btn" title="Mossa successiva (Freccia Destra)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button id="btnLast" class="icon-btn" title="Vai alla soluzione finale">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+              </button>
+            </div>
+
+            <div class="speed-control">
+              <span class="speed-label">Velocità</span>
+              <div class="speed-pills" id="speedPills">
+                <button class="speed-pill" data-speed="0.55">0.5×</button>
+                <button class="speed-pill is-active" data-speed="1">1×</button>
+                <button class="speed-pill" data-speed="1.6">1.5×</button>
+                <button class="speed-pill" data-speed="2.6">2.5×</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Track -->
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+            </div>
+            <span id="progressText" class="progress-text">0 / 0</span>
+          </div>
+
+          <!-- Full Sequence of Moves -->
+          <div class="moves-list-header">
+            <span>Tutte le mosse (clicca una mossa per saltare a quel punto)</span>
+          </div>
+          <div id="movesGrid" class="moves-grid" role="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: 6-Face Color Picker & 2D Unfolded Net -->
+    <aside class="col-editor">
+      <div class="card editor-card">
+        <div class="editor-header">
+          <div>
+            <h2>Configura le 6 Facce</h2>
+            <p class="editor-sub">Seleziona un colore e clicca o trascina sugli adesivi</p>
+          </div>
+          <span id="filledCounter" class="filled-counter">54 / 54</span>
+        </div>
+
+        <!-- Color Palette with Live Counters -->
+        <div id="colorPalette" class="color-palette" role="radiogroup" aria-label="Seleziona colore adesivo"></div>
+
+        <!-- 2D Unfolded Cube Net -->
+        <div class="net-wrapper">
+          <div id="cubeNet" class="cube-net" aria-label="Sviluppo 2D delle 6 facce del cubo"></div>
+        </div>
+
+        <!-- Center Lock Option & Quick Orientation Hint -->
+        <div class="editor-footer">
+          <label class="switch-row">
+            <input type="checkbox" id="toggleUnlockCenters" />
+            <span class="switch-track"></span>
+            <span class="switch-label">Sblocca i 6 centri (se tieni il cubo orientato diversamente)</span>
+          </label>
+          <p class="orientation-tip">
+            <strong>Come leggere il tuo cubo:</strong> tieni la faccia <strong>Verde</strong> verso di te e quella <strong>Bianca</strong> in alto, poi copia i colori di tutte le 6 facce nella griglia qui sopra.
+          </p>
+        </div>
+      </div>
+
+      <!-- Compact Notation Legend -->
+      <details class="card legend-card">
+        <summary class="legend-summary">
+          <span>Guida rapida alla notazione (U, R, F, D, L, B)</span>
+          <svg class="ico ico-sm legend-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+        </summary>
+        <div class="legend-body">
+          <div class="legend-grid">
+            <div class="legend-item"><kbd>U</kbd><span><strong>Alto</strong> (Up)</span></div>
+            <div class="legend-item"><kbd>D</kbd><span><strong>Basso</strong> (Down)</span></div>
+            <div class="legend-item"><kbd>R</kbd><span><strong>Destra</strong> (Right)</span></div>
+            <div class="legend-item"><kbd>L</kbd><span><strong>Sinistra</strong> (Left)</span></div>
+            <div class="legend-item"><kbd>F</kbd><span><strong>Fronte</strong> (Front)</span></div>
+            <div class="legend-item"><kbd>B</kbd><span><strong>Retro</strong> (Back)</span></div>
+          </div>
+          <div class="legend-mods">
+            <div><kbd>R</kbd> 90° in senso orario</div>
+            <div><kbd>R'</kbd> 90° in senso antiorario</div>
+            <div><kbd>R2</kbd> 180° (mezzo giro)</div>
+          </div>
+          <div class="legend-keys">
+            Scorciatoie tastiera: <kbd>1</kbd>–<kbd>6</kbd> colori • <kbd>Spazio</kbd> Play/Pausa • <kbd>←</kbd><kbd>→</kbd> passo-passo
+          </div>
+        </div>
+      </details>
+    </aside>
+  </main>
+
+  <script src="js/cube-model.js"></script>
+  <script src="js/kociemba.js"></script>
+  <script src="js/cube3d.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
